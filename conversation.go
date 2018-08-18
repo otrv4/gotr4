@@ -1,11 +1,16 @@
 package gotra
 
+import "io"
+
 type conversation struct {
+	r io.Reader
 }
 
 // TODO: for all these functions, if we're currently in OTRv3 we should fall back to an otr3 conversation
 // TODO: figure out how to decide how we should deal with offline etc. maybe a callback or something?
 // TODO: fragmentation etc
+
+// TODO: I don't remember how the traces are supposed to work. Figure that out later, I guess
 
 func (c *conversation) Send(m ValidMessage, trace ...interface{}) ([]ValidMessage, error) {
 	// TODO: sort out the flow here
@@ -39,4 +44,10 @@ func (c *conversation) Receive(m ValidMessage) (plain MessagePlaintext, toSend [
 // This function will return nil if the conversation is not in a valid state to start a conversation
 func (c *conversation) QueryMessage() ValidMessage {
 	return nil
+}
+
+// End will end the conversation from this side, returning the messages to send to
+// indicate the ending for the peer, or an error if something goes wrong
+func (c *conversation) End() ([]ValidMessage, error) {
+	return nil, nil
 }
