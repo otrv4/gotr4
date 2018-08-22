@@ -1,7 +1,12 @@
 package gotra
 
-var kdfPrekeyServerPrefix = []byte("OTR-Prekey-Server")
-var kdfPrefix = []byte("OTRv4")
+const (
+	version = uint16(4)
+)
+
+const (
+	messageTypeIdentityMessage = uint8(0x35)
+)
 
 const (
 	usageFingerprint                  = byte(0x00)
