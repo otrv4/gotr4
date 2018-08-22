@@ -2,6 +2,7 @@ package gotra
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 
 	"github.com/coyim/gotrax"
@@ -11,6 +12,14 @@ type conversation struct {
 	r                io.Reader
 	longTerm         *gotrax.Keypair
 	otherInstanceTag uint32
+
+	im  *identityMessage
+	imp *identityMessagePrivate
+	ar  *authRMessage
+	arp *authRMessagePrivate
+	ai  *authIMessage
+
+	state convState
 }
 
 // TODO: for all these functions, if we're currently in OTRv3 we should fall back to an otr3 conversation
@@ -41,12 +50,21 @@ func isIdentityMessage(m ValidMessage) bool {
 	return bytes.HasPrefix(m, append(gotrax.AppendShort(nil, version), messageTypeIdentityMessage))
 }
 
+func isAuthRMessage(m ValidMessage) bool {
+	// TODO: make this work correctly
+	return bytes.HasPrefix(m, append(gotrax.AppendShort(nil, version), messageTypeAuthRMessage))
+}
+
+func isAuthIMessage(m ValidMessage) bool {
+	// TODO: make this work correctly
+	return bytes.HasPrefix(m, append(gotrax.AppendShort(nil, version), messageTypeAuthIMessage))
+}
+
 func (c *conversation) processQueryMessage(m ValidMessage) (plain MessagePlaintext, toSend []ValidMessage, err error) {
 	// TODO:
 	// if the message is 4 and we allow 4
-	//    transition to waitingAuthR
-	//    return an identity message
 
+	c.state = stateWaitingAuthR{}
 	return nil, []ValidMessage{c.createIdentityMessage()}, nil
 }
 
@@ -74,9 +92,85 @@ func (c *conversation) processIdentityMessage(m ValidMessage) (plain MessagePlai
 
 	c.fixInstanceTag(im.senderInstanceTag)
 
-	// Transition to the WAITING_AUTH_I state.
+	c.im = im
 
-	return nil, []ValidMessage{c.createAuthRMessage(im)}, nil
+	c.state = stateWaitingAuthI{}
+
+	return nil, []ValidMessage{c.createAuthRMessage()}, nil
+}
+
+func (c *conversation) processAuthRMessage(m ValidMessage) (plain MessagePlaintext, toSend []ValidMessage, err error) {
+	// TODO:
+	// - If the state is WAITING_AUTH_R:
+	//   - If the receiver's instance tag in the message is not the sender's instance tag you are currently using, ignore the message.
+	//   - Validate the Auth-R message.
+	//   - If validation fails:
+	//     - Ignore the message.
+	//     - Stay in state WAITING_AUTH_R.
+	//   - If validation succeeds:
+	//     - Reply with an Auth-I message, as defined in Sending an Auth-I Message section.
+	// - If the state is ENCRYPTED_MESSAGES:
+	//   - If this Auth-R message is the same one you received earlier:
+	//     - Retransmit your Auth-I Message.
+	//   - Otherwise:
+	//     - Ignore the message.
+	// - If the state is not WAITING_AUTH_R:
+	//   - Ignore this message.
+
+	arm := &authRMessage{}
+	_, ok := arm.deserialize(m)
+	if !ok {
+		// Ignore the message
+		return nil, nil, nil
+	}
+
+	verr := arm.validate(c.getInstanceTag())
+	if verr != nil {
+		// Ignore the message
+		return nil, nil, nil
+	}
+
+	c.ar = arm
+	c.state = stateWaitingDakeDataMessage{}
+
+	return nil, []ValidMessage{c.createAuthIMessage()}, nil
+}
+
+func (c *conversation) processAuthIMessage(m ValidMessage) (plain MessagePlaintext, toSend []ValidMessage, err error) {
+	// TODO:
+	// 	If the state is WAITING_AUTH_I:
+	//    If the receiver's instance tag in the message is not the sender's instance tag you are currently using, ignore this message.
+	//    Validate the Auth-I message.
+	//      If validation fails:
+	//        Ignore the message.
+	//        Stay in state WAITING_AUTH_I.
+	//      If validation succeeds:
+	//        Transition to state ENCRYPTED_MESSAGES.
+	//        Initialize the double ratcheting, as defined in the Interactive DAKE Overview section.
+	//        Send a regular Data Message. If a plaintext message is waiting to be sent, this can be used. Otherwise an empty heartbeat message should be sent. This data message is called "DAKE Data Message".
+	//        If there are stored Data Messages, remove them from storage - there is no way these messages can be valid for the current DAKE.
+	// 	If the state is not WAITING_AUTH_I:
+	//   - Ignore this message.
+
+	aim := &authIMessage{}
+	_, ok := aim.deserialize(m)
+	if !ok {
+		// Ignore the message
+		return nil, nil, nil
+	}
+
+	verr := aim.validate(c.getInstanceTag())
+	if verr != nil {
+		// Ignore the message
+		return nil, nil, nil
+	}
+
+	c.ai = aim
+
+	// TODO: initialize double ratchet here
+	c.state = stateEncrypted{}
+
+	return nil, []ValidMessage{c.createHeartbeatDataMessage()}, nil
 }
 
 func (c *conversation) Receive(m ValidMessage) (plain MessagePlaintext, toSend []ValidMessage, err error) {
@@ -90,12 +184,19 @@ func (c *conversation) Receive(m ValidMessage) (plain MessagePlaintext, toSend [
 		return c.processIdentityMessage(m)
 	}
 
+	if isAuthRMessage(m) {
+		return c.processAuthRMessage(m)
+	}
+
+	if isAuthIMessage(m) {
+		return c.processAuthIMessage(m)
+	}
+
+	fmt.Printf("TODO: hit a place where we need to continue...\n")
+
 	// - plaintext without tag
 	// - plaintext with tag
 	// - error message
-	// - identity message
-	// - auth-r message
-	// - auth-i message
 	// - non-interactive auth message
 	// - dake data message
 	// - data message

@@ -6,6 +6,8 @@ const (
 
 const (
 	messageTypeIdentityMessage = uint8(0x35)
+	messageTypeAuthRMessage    = uint8(0x36)
+	messageTypeAuthIMessage    = uint8(0x37)
 )
 
 const (

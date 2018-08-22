@@ -10,8 +10,11 @@ func (s *GotraSuite) Test_basicFlow_onlineWithQueryMessage(c *C) {
 
 	rand := gotrax.FixtureRand()
 
-	alice := &conversation{r: rand}
-	bob := &conversation{r: rand}
+	alice := &conversation{r: rand, state: stateStart{}}
+	bob := &conversation{r: rand, state: stateStart{}}
+
+	c.Assert(alice.state, FitsTypeOf, stateStart{})
+	c.Assert(bob.state, FitsTypeOf, stateStart{})
 
 	aliceQuery := alice.QueryMessage()
 	c.Assert(aliceQuery, Not(IsNil))
@@ -20,26 +23,31 @@ func (s *GotraSuite) Test_basicFlow_onlineWithQueryMessage(c *C) {
 	c.Assert(bobPlain1, IsNil)
 	c.Assert(bobErr1, IsNil)
 	c.Assert(bobIdentity, HasLen, 1)
+	c.Assert(bob.state, FitsTypeOf, stateWaitingAuthR{})
 
 	alicePlain1, aliceAuthR, aliceErr1 := alice.Receive(bobIdentity[0])
 	c.Assert(alicePlain1, IsNil)
 	c.Assert(aliceErr1, IsNil)
 	c.Assert(aliceAuthR, HasLen, 1)
+	c.Assert(alice.state, FitsTypeOf, stateWaitingAuthI{})
 
 	bobPlain2, bobAuthI, bobErr2 := bob.Receive(aliceAuthR[0])
 	c.Assert(bobPlain2, IsNil)
 	c.Assert(bobErr2, IsNil)
 	c.Assert(bobAuthI, HasLen, 1)
+	c.Assert(bob.state, FitsTypeOf, stateWaitingDakeDataMessage{})
 
 	alicePlain2, aliceDakeData, aliceErr2 := alice.Receive(bobAuthI[0])
 	c.Assert(alicePlain2, IsNil)
 	c.Assert(aliceErr2, IsNil)
 	c.Assert(aliceDakeData, HasLen, 1)
+	c.Assert(alice.state, FitsTypeOf, stateEncrypted{})
 
 	bobPlain3, bobToSend1, bobErr3 := bob.Receive(aliceDakeData[0])
 	c.Assert(bobPlain3, IsNil)
 	c.Assert(bobErr3, IsNil)
 	c.Assert(bobToSend1, HasLen, 0)
+	c.Assert(bob.state, FitsTypeOf, stateEncrypted{})
 
 	// We are now ready to do stuff
 
@@ -77,6 +85,7 @@ func (s *GotraSuite) Test_basicFlow_onlineWithQueryMessage(c *C) {
 	aliceToSend5, aliceErr7 := alice.End()
 	c.Assert(aliceErr7, IsNil)
 	c.Assert(aliceToSend5, HasLen, 1)
+	c.Assert(alice.state, FitsTypeOf, stateFinished{})
 
 	bobPlain6, bobToSend5, bobErr6 := bob.Receive(aliceToSend4[0])
 	c.Assert(bobPlain6, Equals, ValidMessage("I wanted to say hello"))
@@ -87,4 +96,5 @@ func (s *GotraSuite) Test_basicFlow_onlineWithQueryMessage(c *C) {
 	c.Assert(bobPlain7, IsNil)
 	c.Assert(bobErr7, IsNil)
 	c.Assert(bobToSend6, HasLen, 0)
+	c.Assert(bob.state, FitsTypeOf, stateFinished{})
 }
