@@ -23,7 +23,6 @@ type conversation struct {
 	state convState
 
 	ssid []byte
-	//	k    []byte
 
 	ratchetId uint32
 	ratchetJ  uint32
