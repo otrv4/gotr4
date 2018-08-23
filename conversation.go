@@ -14,6 +14,8 @@ type conversation struct {
 	longTerm         *gotrax.Keypair
 	otherInstanceTag uint32
 
+	currentClientProfile *gotrax.ClientProfile
+
 	im  *identityMessage
 	imp *identityMessagePrivate
 	ar  *authRMessage

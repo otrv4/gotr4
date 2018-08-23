@@ -21,15 +21,18 @@ func (c *conversation) getClientProfileExpiration() time.Time {
 
 func (c *conversation) getValidClientProfile() *gotrax.ClientProfile {
 	// TODO: implement correctly
-	kp := c.getKeypair()
-	cp := &gotrax.ClientProfile{
-		InstanceTag:           c.getInstanceTag(),
-		PublicKey:             kp.Pub,
-		Versions:              c.getVersions(),
-		Expiration:            c.getClientProfileExpiration(),
-		DsaKey:                nil,
-		TransitionalSignature: nil,
+	if c.currentClientProfile == nil {
+		kp := c.getKeypair()
+		cp := &gotrax.ClientProfile{
+			InstanceTag:           c.getInstanceTag(),
+			PublicKey:             kp.Pub,
+			Versions:              c.getVersions(),
+			Expiration:            c.getClientProfileExpiration(),
+			DsaKey:                nil,
+			TransitionalSignature: nil,
+		}
+		cp.Sig = gotrax.CreateEddsaSignature(cp.GenerateSignature(kp))
+		c.currentClientProfile = cp
 	}
-	cp.Sig = gotrax.CreateEddsaSignature(cp.GenerateSignature(kp))
-	return cp
+	return c.currentClientProfile
 }
