@@ -33,10 +33,10 @@ func (m *dataMessage) validate(tag uint32) error {
 
 func (c *conversation) createHeartbeatDataMessage() ValidMessage {
 	// No message and no TLVs - look up if this is actually the correct format
-	return c.createDataMessage([]byte{0x00})
+	return c.createDataMessage([]byte{0x00}, []*tlv{})
 }
 
-func (c *conversation) createDataMessage(m []byte) ValidMessage {
+func (c *conversation) createDataMessage(m []byte, tt []*tlv) ValidMessage {
 	c.maybeRatchetSender()
 
 	dm := &dataMessage{}
@@ -58,10 +58,15 @@ func (c *conversation) createDataMessage(m []byte) ValidMessage {
 	// TODO: don't ignore error here
 	gotrax.RandomInto(c, dm.nonce[:])
 
-	dm.msg = make([]byte, len(m))
+	mm := m
+	if len(tt) > 0 {
+		mm = append(append(mm, 0x00), serializeTLVs(tt)...)
+	}
+
+	dm.msg = make([]byte, len(mm))
 	var key [32]byte
 	copy(key[:], mke)
-	salsa20.XORKeyStream(dm.msg, m, dm.nonce[:], &key)
+	salsa20.XORKeyStream(dm.msg, mm, dm.nonce[:], &key)
 
 	copy(dm.mac[:], gotrax.Kdf(usageAuthenticator, 64, append(mkm, gotrax.Kdf(usageDataMessageSections, 64, dm.serializeForMac())...)))
 
@@ -104,8 +109,35 @@ func (c *conversation) receivedDataMessage(dm *dataMessage) (plain MessagePlaint
 	var key [32]byte
 	copy(key[:], mke)
 	salsa20.XORKeyStream(msg, dm.msg, dm.nonce[:], &key)
+	mm, t := parseMessageData(msg)
 
-	msgp := bytes.Split(msg, []byte{0x00})
+	// TODO: don't ignore return values here
+	c.processTLVs(t)
 
-	return MessagePlaintext(msgp[0]), nil, nil
+	return mm, nil, nil
+}
+
+func parseMessageData(m []byte) (MessagePlaintext, []*tlv) {
+	msgp := bytes.SplitN(m, []byte{0x00}, 2)
+	switch len(msgp) {
+	case 0:
+		return MessagePlaintext{}, nil
+	case 1:
+		return MessagePlaintext(msgp[0]), nil
+	default:
+		return MessagePlaintext(msgp[0]), parseTlvs(msgp[1])
+	}
+}
+
+func parseTlvs(tt []byte) []*tlv {
+	res := []*tlv{}
+	var ok bool
+	for len(tt) > 0 {
+		t := &tlv{}
+		if tt, ok = t.deserialize(tt); !ok {
+			return nil
+		}
+		res = append(res, t)
+	}
+	return res
 }

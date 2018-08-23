@@ -2,7 +2,6 @@ package gotra
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"math/big"
 
@@ -61,7 +60,7 @@ func (c *conversation) Send(m MessagePlaintext, trace ...interface{}) ([]ValidMe
 	//   - we will optionally add a whitespace tag here if policies say we should
 	// - if we're in a finished state, this should probably result in an error or something
 
-	return []ValidMessage{c.createDataMessage(m)}, nil
+	return []ValidMessage{c.createDataMessage(m, []*tlv{})}, nil
 }
 
 func isQueryMessage(m ValidMessage) bool {
@@ -226,7 +225,9 @@ func (c *conversation) processDataMessage(m ValidMessage) (plain MessagePlaintex
 
 	plain, toSend, err = c.receivedDataMessage(dm)
 	// TODO: check if error here. but for now we can assume the ratchet is initialized
-	c.state = stateEncrypted{}
+	if c.state.String() == "WAITING_DAKE_DATA_MESSAGE" {
+		c.state = stateEncrypted{}
+	}
 
 	return
 }
@@ -254,13 +255,10 @@ func (c *conversation) Receive(m ValidMessage) (plain MessagePlaintext, toSend [
 		return c.processDataMessage(m)
 	}
 
-	fmt.Printf("TODO: hit a place where we need to continue...\n")
-
 	// - plaintext without tag
 	// - plaintext with tag
 	// - error message
 	// - non-interactive auth message
-	// - data message
 
 	return nil, nil, nil
 }
@@ -276,6 +274,12 @@ func (c *conversation) QueryMessage() ValidMessage {
 // indicate the ending for the peer, or an error if something goes wrong
 func (c *conversation) End() ([]ValidMessage, error) {
 	// TODO: implement correctly
-	// TODO: continue here
-	return nil, nil
+
+	// TODO: discard session keys
+
+	dm := c.createDataMessage(nil, []*tlv{createDisconnectedTLV()})
+
+	c.state = stateStart{}
+
+	return []ValidMessage{dm}, nil
 }

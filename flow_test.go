@@ -88,12 +88,12 @@ func (s *GotraSuite) Test_basicFlow_onlineWithQueryMessage(c *C) {
 	c.Assert(alice.state, FitsTypeOf, stateStart{})
 
 	bobPlain6, bobToSend5, bobErr6 := bob.Receive(aliceToSend4[0])
-	c.Assert(bobPlain6, Equals, MessagePlaintext("I wanted to say hello"))
+	c.Assert(bobPlain6, DeepEquals, MessagePlaintext("I wanted to say hello"))
 	c.Assert(bobErr6, IsNil)
 	c.Assert(bobToSend5, HasLen, 0)
 
 	bobPlain7, bobToSend6, bobErr7 := bob.Receive(aliceToSend5[0])
-	c.Assert(bobPlain7, IsNil)
+	c.Assert(bobPlain7, HasLen, 0)
 	c.Assert(bobErr7, IsNil)
 	c.Assert(bobToSend6, HasLen, 0)
 	c.Assert(bob.state, FitsTypeOf, stateFinished{})

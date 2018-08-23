@@ -2,6 +2,7 @@ package gotra
 
 type convState interface {
 	next()
+	String() string
 }
 
 type stateStart struct{}
