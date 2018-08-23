@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"math/big"
 
 	"github.com/coyim/gotrax"
+	"github.com/otrv4/ed448"
 )
 
 type conversation struct {
@@ -20,6 +22,28 @@ type conversation struct {
 	ai  *authIMessage
 
 	state convState
+
+	ssid []byte
+	//	k    []byte
+
+	ratchetId uint32
+	ratchetJ  uint32
+	ratchetK  uint32
+	ratchetPN uint32
+
+	rootKey           []byte
+	sendingChainKey   []byte
+	receivingChainKey []byte
+
+	their_ecdh ed448.Point
+	their_dh   *big.Int
+
+	our_ecdh *gotrax.Keypair
+	our_dh   *dhKeypair
+
+	brace_key []byte
+
+	shouldRatchet bool
 }
 
 // TODO: for all these functions, if we're currently in OTRv3 we should fall back to an otr3 conversation
@@ -29,7 +53,7 @@ type conversation struct {
 
 // TODO: I don't remember how the traces are supposed to work. Figure that out later, I guess
 
-func (c *conversation) Send(m ValidMessage, trace ...interface{}) ([]ValidMessage, error) {
+func (c *conversation) Send(m MessagePlaintext, trace ...interface{}) ([]ValidMessage, error) {
 	// TODO: sort out the flow here
 
 	// - if we're in an encrypted state, just put it in a data message and send it
@@ -37,7 +61,7 @@ func (c *conversation) Send(m ValidMessage, trace ...interface{}) ([]ValidMessag
 	//   - we will optionally add a whitespace tag here if policies say we should
 	// - if we're in a finished state, this should probably result in an error or something
 
-	return nil, nil
+	return []ValidMessage{c.createDataMessage(m)}, nil
 }
 
 func isQueryMessage(m ValidMessage) bool {
@@ -58,6 +82,11 @@ func isAuthRMessage(m ValidMessage) bool {
 func isAuthIMessage(m ValidMessage) bool {
 	// TODO: make this work correctly
 	return bytes.HasPrefix(m, append(gotrax.AppendShort(nil, version), messageTypeAuthIMessage))
+}
+
+func isDataMessage(m ValidMessage) bool {
+	// TODO: make this work correctly
+	return bytes.HasPrefix(m, append(gotrax.AppendShort(nil, version), messageTypeDataMessage))
 }
 
 func (c *conversation) processQueryMessage(m ValidMessage) (plain MessagePlaintext, toSend []ValidMessage, err error) {
@@ -133,7 +162,10 @@ func (c *conversation) processAuthRMessage(m ValidMessage) (plain MessagePlainte
 	c.ar = arm
 	c.state = stateWaitingDakeDataMessage{}
 
-	return nil, []ValidMessage{c.createAuthIMessage()}, nil
+	aim := c.createAuthIMessage()
+	c.initializeRatchetR()
+
+	return nil, []ValidMessage{aim}, nil
 }
 
 func (c *conversation) processAuthIMessage(m ValidMessage) (plain MessagePlaintext, toSend []ValidMessage, err error) {
@@ -167,10 +199,36 @@ func (c *conversation) processAuthIMessage(m ValidMessage) (plain MessagePlainte
 
 	c.ai = aim
 
-	// TODO: initialize double ratchet here
+	// TODO: if result is error, don't ignore it
+	c.initializeRatchetI()
 	c.state = stateEncrypted{}
 
+	// TODO: here we can send a message waiting to be sent OR a heartbeat
+
 	return nil, []ValidMessage{c.createHeartbeatDataMessage()}, nil
+}
+
+func (c *conversation) processDataMessage(m ValidMessage) (plain MessagePlaintext, toSend []ValidMessage, err error) {
+	// TODO: implement correctly
+
+	dm := &dataMessage{}
+	_, ok := dm.deserialize(m)
+	if !ok {
+		// Ignore the message
+		return nil, nil, nil
+	}
+
+	verr := dm.validate(c.getInstanceTag())
+	if verr != nil {
+		// Ignore the message
+		return nil, nil, nil
+	}
+
+	plain, toSend, err = c.receivedDataMessage(dm)
+	// TODO: check if error here. but for now we can assume the ratchet is initialized
+	c.state = stateEncrypted{}
+
+	return
 }
 
 func (c *conversation) Receive(m ValidMessage) (plain MessagePlaintext, toSend []ValidMessage, err error) {
@@ -192,13 +250,16 @@ func (c *conversation) Receive(m ValidMessage) (plain MessagePlaintext, toSend [
 		return c.processAuthIMessage(m)
 	}
 
+	if isDataMessage(m) {
+		return c.processDataMessage(m)
+	}
+
 	fmt.Printf("TODO: hit a place where we need to continue...\n")
 
 	// - plaintext without tag
 	// - plaintext with tag
 	// - error message
 	// - non-interactive auth message
-	// - dake data message
 	// - data message
 
 	return nil, nil, nil
@@ -214,5 +275,7 @@ func (c *conversation) QueryMessage() ValidMessage {
 // End will end the conversation from this side, returning the messages to send to
 // indicate the ending for the peer, or an error if something goes wrong
 func (c *conversation) End() ([]ValidMessage, error) {
+	// TODO: implement correctly
+	// TODO: continue here
 	return nil, nil
 }

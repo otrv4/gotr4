@@ -5,7 +5,7 @@
   branch = "master"
   name = "github.com/coyim/gotrax"
   packages = ["."]
-  revision = "7640de52fb10ce697aa9cc1fcbfb83f909af293b"
+  revision = "5a5a65933f9c5fc21c1049c8d0d2b9e0dacf346f"
 
 [[projects]]
   name = "github.com/kr/pretty"
@@ -28,7 +28,12 @@
 [[projects]]
   branch = "master"
   name = "golang.org/x/crypto"
-  packages = ["sha3"]
+  packages = [
+    "internal/subtle",
+    "salsa20",
+    "salsa20/salsa",
+    "sha3"
+  ]
   revision = "aabede6cba87e37f413b3e60ebfc214f8eeca1b0"
 
 [[projects]]
@@ -40,6 +45,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "7ffea95f6b7b651d2b909b3b1b98318be5506b3426b5364cc6fa5797546debd6"
+  inputs-digest = "4e242b833338b94222cf033d7ae1dbc74dd757967e6ddc3c11fdcea4ebe9d52e"
   solver-name = "gps-cdcl"
   solver-version = 1
