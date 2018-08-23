@@ -59,7 +59,22 @@ func (c *conversation) Send(m MessagePlaintext, trace ...interface{}) ([]ValidMe
 	//   - we will optionally add a whitespace tag here if policies say we should
 	// - if we're in a finished state, this should probably result in an error or something
 
-	return []ValidMessage{c.createDataMessage(m, []*tlv{})}, nil
+	return []ValidMessage{msgEncode(c.createDataMessage(m, []*tlv{}))}, nil
+}
+
+func msgEncode(msg []byte) []byte {
+	return append(append(otrPrefix, b64encode(msg)...), '.')
+}
+
+func removeOTRMsgEnvelope(msg []byte) []byte {
+	return msg[len(otrPrefix) : len(msg)-1]
+}
+
+func msgDecode(msg []byte) []byte {
+	msg = removeOTRMsgEnvelope(msg)
+	msg, _ = b64decode(msg)
+	// TODO: don't ignore error here
+	return msg
 }
 
 func isQueryMessage(m ValidMessage) bool {
@@ -235,23 +250,25 @@ func (c *conversation) Receive(m ValidMessage) (plain MessagePlaintext, toSend [
 	// TODO: sort out the flow here
 
 	if isQueryMessage(m) {
-		return c.processQueryMessage(m)
+		plain, toSend, err = c.processQueryMessage(m)
 	}
 
-	if isIdentityMessage(m) {
-		return c.processIdentityMessage(m)
+	dm := msgDecode(m)
+
+	if isIdentityMessage(dm) {
+		plain, toSend, err = c.processIdentityMessage(dm)
 	}
 
-	if isAuthRMessage(m) {
-		return c.processAuthRMessage(m)
+	if isAuthRMessage(dm) {
+		plain, toSend, err = c.processAuthRMessage(dm)
 	}
 
-	if isAuthIMessage(m) {
-		return c.processAuthIMessage(m)
+	if isAuthIMessage(dm) {
+		plain, toSend, err = c.processAuthIMessage(dm)
 	}
 
-	if isDataMessage(m) {
-		return c.processDataMessage(m)
+	if isDataMessage(dm) {
+		plain, toSend, err = c.processDataMessage(dm)
 	}
 
 	// - plaintext without tag
@@ -259,7 +276,11 @@ func (c *conversation) Receive(m ValidMessage) (plain MessagePlaintext, toSend [
 	// - error message
 	// - non-interactive auth message
 
-	return nil, nil, nil
+	for ix, ts := range toSend {
+		toSend[ix] = msgEncode(ts)
+	}
+
+	return
 }
 
 // QueryMessage returns a message that can be sent to request the start of an OTR session
@@ -280,5 +301,5 @@ func (c *conversation) End() ([]ValidMessage, error) {
 
 	c.state = stateStart{}
 
-	return []ValidMessage{dm}, nil
+	return []ValidMessage{msgEncode(dm)}, nil
 }

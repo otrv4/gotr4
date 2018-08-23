@@ -4,6 +4,8 @@ const (
 	version = uint16(4)
 )
 
+var otrPrefix = []byte("?OTR:")
+
 const (
 	messageTypeDataMessage     = uint8(0x03)
 	messageTypeIdentityMessage = uint8(0x35)
