@@ -29,6 +29,7 @@
      will be locked to one single instance tag, and we will ONLY modify Client Profiles related to that instance tag.
      That means we will not remove or update or touch the other Client Profiles - they will remain unharmed.
   ! A new Client Profile needs to be created and published if a new key is created
+  ! Client Profile validity should always be checked before publishing, and before using a retrieved one
 
 - Prekey Profile management:
   ! Exactly the same behavior as for Client Profile
@@ -50,6 +51,7 @@
   ! When a Client instance is created/initialized we will load the timing information. We will set timers for when to do:
     - The next complete purge
     - The next check for number of prekey messages
+  ! Prekey Message validity should always be checked before publishing, and before using a retrieved one
 
 - Prekey Server management:
   ! The Client will take a callback. This will be responsible for doing the prekey server discovery. Gotra will not do this.
