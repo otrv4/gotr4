@@ -1,5 +1,77 @@
-- How when should client profiles be created and uploaded?
-- -- || -- prekey profiles and messages
-- When should we decide to start an offline conversation?
-- How does the interface look for communicating with the prekey server?
+! We need something like a Client - that managed conversations and configuration etc
+! There should be one Client for each account. There exists no overarching manager for Clients.
+! There will be no timers running inside the Gotra library. Instead a Client will have a hook called RunScheduledEvents, that the IM client will call at regular intervals.
 
+- Key management:
+  ! We need to store private and public long term v4 keys
+  ! We need to store private and public long term v3 keys
+  ! These will be generated on the fly when needed
+  ! They can also be manually created using an API method
+  ! We will try to load the keys when a Client instance is created/initialized
+  ! We store the keys immediately after creating them
+  
+- Client Profile management:
+  ! Configuration options exposed:
+    - How long to allow expiry for a Client Profile
+    - The minimum interval BEFORE expiry when we should publish an updated Client Profile
+  ! We need to store the Client Profile
+  ! We need to store a flag for each Client Profile, whether it has been published
+  ! A Client Profile is first created when a Client instance is created/initialized
+     OR if the Client Profile we have is expired, or close to expire
+  ! We also set a timer when going online, that reminds us when the Client Profile should be regenerated
+  ! We try to publish the Client Profile as soon as we create it.
+     IF we are offline when creating the new Client Profile, we set a handler to publish it as soon as we go online
+  ! If we have Client Profile's in storage, these will be read when the Client instance is created/initialized
+     IF the newest Client Profile we have is not published,  we set a handler to publish it as soon as we go online
+  ! We can have more than one Client Profile stored, for different instance tags and public keys. The Client instance
+     will be locked to one single instance tag, and we will ONLY modify Client Profiles related to that instance tag.
+     That means we will not remove or update or touch the other Client Profiles - they will remain unharmed.
+
+- Prekey Profile management:
+  ! Exactly the same behavior as for Client Profile
+    WITH the exception that we also need to store the private key for the Shared Prekey
+
+- Prekey Message management:
+  ! Configuration options exposed:
+    - How many prekey messages to create when uploading new ones
+    - The minimum number of prekey messages to trigger a creation of new ones
+    - The rough interval between checks for number of prekey messages
+    - The rough interval between complete purges of all prekey messages  (I don't know if this is possible - maybe repeatedly request ensembles?)
+  ! We need to store the Prekey Messages
+  ! We need to store the private ephemeral keys for the Prekey Message
+  ! We need to store a flag for each Prekey Message, whether it has been published
+  ! We will only create new Prekey Messages just-in-time, before publishing new ones
+  ! We will store the last time we did a complete purge
+  ! We will store the last time we published
+  ! We will store the last time we did a check for number of prekey messages
+  ! When a Client instance is created/initialized we will load the timing information. We will set timers for when to do:
+    - The next complete purge
+    - The next check for number of prekey messages
+
+- Prekey Server management:
+  ! The Client will take a callback. This will be responsible for doing the prekey server discovery. Gotra will not do this.
+  ! The Client will have another callback: SendToPrekeyServer(id, prekeyServerInfo, message, ResultCallback(id, message))
+    - This is how all communication with the prekey server happens. It's the IM client that is responsible for the communication.
+    - There might be some onError callbacks as well.
+
+- Starting an offline conversation:
+  ! Configuration options exposed:
+    - Should we try to start an offline conversation with someone offline?
+    - Should we try to start an online conversation as well, with someone offline?
+    - Should we send the offline start to one instance tag, or to all of them?
+  ! A callback on Conversation: IsOnline() which checks whether the other party is online
+  ! Based on the result of this we will start an online or an offline conversation
+  ! The different security status types will have some more options to indicate online or offline
+
+- Interface for getting more information about the connection:
+  ! This should expose information about:
+    - whether the connection was started offline or online
+    - which prekey server was used, and its fingerprint
+    - whether there were any problems with fingerprints or other things like that
+  ! All the regular stuff, SSID etc    
+
+- Error management:
+  - If it's not possible to get a Prekey Ensemble for any reason:
+    ! Callback
+  - Prekey Server fingerprint doesn't match or has changed:
+    ! Callback
