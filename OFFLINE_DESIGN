@@ -14,6 +14,8 @@
   ! Configuration options exposed:
     - How long to allow expiry for a Client Profile
     - The minimum interval BEFORE expiry when we should publish an updated Client Profile
+    - Whether the v3 key should be published
+    - Whether a transitional signature should be published
   ! We need to store the Client Profile
   ! We need to store a flag for each Client Profile, whether it has been published
   ! A Client Profile is first created when a Client instance is created/initialized
