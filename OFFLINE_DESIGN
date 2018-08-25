@@ -26,6 +26,7 @@
   ! We can have more than one Client Profile stored, for different instance tags and public keys. The Client instance
      will be locked to one single instance tag, and we will ONLY modify Client Profiles related to that instance tag.
      That means we will not remove or update or touch the other Client Profiles - they will remain unharmed.
+  ! A new Client Profile needs to be created and published if a new key is created
 
 - Prekey Profile management:
   ! Exactly the same behavior as for Client Profile
