@@ -1,0 +1,23 @@
+- The purpose of this document is to outline how permanent storage should be handled inside of Gotra, in cooperation with the IM client.
+
+- There are a few problems with storage:
+  - We don't want Gotra to be in charge of the storage strategy. Different IM clients will want to store things in different ways.
+  - We don't want the IM client to know anything about the serialization strategies or anything about the data
+  - Some data will be larger - we will store hundreds of prekey messages, but also smaller ones.
+
+So, the way we will handle this is quite simple. A Client will expose a few Callbacks that the IM client needs to implement.
+A Client will have an opaque clientContext (an interface{}). A Conversation will have an opaque conversationContext (interface{}). All callbacks will take these two objects. When storing things that don't depend on the conversation, the conversation context will be nil. These should be expected and cause no problems.
+
+The callbacks will look something like this:
+
+- StoreSmallObject(clientContext, conversationContext interface{}, segmentName string, data io.Reader) error
+- StoreLargeObject(clientContext, conversationContext interface{}, segmentName string, data io.Reader) error
+- LoadSmallObject(clientContext, conversationContext interface{}, segmentName string, loader func(io.WriteCloser) error) error
+- LoadLargeObject(clientContext, conversationContext interface{}, segmentName string, loader func(io.WriteCloser) error) error
+
+All of these will be locked over the tuple (clientContext, conversationContext, segmentName) for the duration of the call. The reason for separating into small and large objects, is so that implementations have a choice of putting the large objects in a different place from the small places, if performance of this is a concern.
+
+An implementation can easily provide something like 
+  StoreSmallData(clientContext, conversationContext interface{}, segmentName string, data []byte) error
+to simplify storage of small strings, etc. However, this can easily be implemented using the existing API.
+
