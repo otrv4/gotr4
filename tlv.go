@@ -1,7 +1,7 @@
-package gotra
+package gotr4
 
 import (
-	"github.com/coyim/gotrax"
+	"github.com/otrv4/gotrx"
 )
 
 type tlv struct {
@@ -22,8 +22,8 @@ const (
 )
 
 func (c *tlv) serialize() []byte {
-	out := gotrax.AppendShort([]byte{}, c.tlvType)
-	out = gotrax.AppendShort(out, c.tlvLength)
+	out := gotrx.AppendShort([]byte{}, c.tlvType)
+	out = gotrx.AppendShort(out, c.tlvLength)
 	return append(out, c.tlvValue...)
 }
 func serializeTLVs(tt []*tlv) []byte {
@@ -36,16 +36,16 @@ func serializeTLVs(tt []*tlv) []byte {
 
 func (c *tlv) deserialize(tt []byte) ([]byte, bool) {
 	var ok bool
-	tt, c.tlvType, ok = gotrax.ExtractShort(tt)
+	tt, c.tlvType, ok = gotrx.ExtractShort(tt)
 	if !ok {
 		return nil, false
 	}
-	tt, c.tlvLength, ok = gotrax.ExtractShort(tt)
+	tt, c.tlvLength, ok = gotrx.ExtractShort(tt)
 	if !ok {
 		return nil, false
 	}
 
-	tt, c.tlvValue, ok = gotrax.ExtractFixedData(tt, int(c.tlvLength))
+	tt, c.tlvValue, ok = gotrx.ExtractFixedData(tt, int(c.tlvLength))
 	if !ok {
 		return nil, false
 	}

@@ -1,47 +1,47 @@
-package gotra
+package gotr4
 
 import (
-	"github.com/coyim/gotrax"
 	"github.com/otrv4/ed448"
+	"github.com/otrv4/gotrx"
 )
 
 type identityMessage struct {
 	senderInstanceTag   uint32
 	receiverInstanceTag uint32
-	clientProfile       *gotrax.ClientProfile
+	clientProfile       *gotrx.ClientProfile
 	y                   ed448.Point
 	b                   *dhPublicKey
 }
 
 type identityMessagePrivate struct {
-	y *gotrax.Keypair
+	y *gotrx.Keypair
 	b *dhKeypair
 }
 
 type authRMessage struct {
 	senderInstanceTag   uint32
 	receiverInstanceTag uint32
-	clientProfile       *gotrax.ClientProfile
+	clientProfile       *gotrx.ClientProfile
 	x                   ed448.Point
 	a                   *dhPublicKey
-	sigma               *gotrax.RingSignature
+	sigma               *gotrx.RingSignature
 }
 
 type authRMessagePrivate struct {
-	x *gotrax.Keypair
+	x *gotrx.Keypair
 	a *dhKeypair
 }
 
 type authIMessage struct {
 	senderInstanceTag   uint32
 	receiverInstanceTag uint32
-	sigma               *gotrax.RingSignature
+	sigma               *gotrx.RingSignature
 }
 
 func (c *conversation) createIdentityMessage() ValidMessage {
 	cp := c.getValidClientProfile()
 	itag := c.getInstanceTag()
-	ykp := gotrax.GenerateKeypair(c)
+	ykp := gotrx.GenerateKeypair(c)
 	bkp, _ := generateDHKeypair(c)
 
 	im := &identityMessage{
@@ -69,7 +69,7 @@ func (m *identityMessage) validate(tag uint32) error {
 func (c *conversation) createAuthRMessage() ValidMessage {
 	cp := c.getValidClientProfile()
 	itag := c.getInstanceTag()
-	xkp := gotrax.GenerateKeypair(c)
+	xkp := gotrx.GenerateKeypair(c)
 	akp, _ := generateDHKeypair(c)
 
 	ar := &authRMessage{
@@ -84,19 +84,19 @@ func (c *conversation) createAuthRMessage() ValidMessage {
 	phi := []byte{}
 
 	t := []byte{0x00}
-	t = append(t, gotrax.Kdf(usageAuthRBobClientProfile, 64, c.im.clientProfile.Serialize())...)
-	t = append(t, gotrax.Kdf(usageAuthRAliceClientProfile, 64, cp.Serialize())...)
-	t = append(t, gotrax.SerializePoint(c.im.y)...)
+	t = append(t, gotrx.Kdf(usageAuthRBobClientProfile, 64, c.im.clientProfile.Serialize())...)
+	t = append(t, gotrx.Kdf(usageAuthRAliceClientProfile, 64, cp.Serialize())...)
+	t = append(t, gotrx.SerializePoint(c.im.y)...)
 	t = append(t, xkp.Pub.Serialize()...)
 	t = append(t, c.im.b.serialize()...)
 	t = append(t, akp.pub.serialize()...)
-	t = append(t, gotrax.Kdf(usageAuthRPhi, 64, phi)...)
+	t = append(t, gotrx.Kdf(usageAuthRPhi, 64, phi)...)
 
 	longTerm := c.getKeypair()
-	yk := gotrax.CreatePublicKey(c.im.y, gotrax.Ed448Key)
+	yk := gotrx.CreatePublicKey(c.im.y, gotrx.Ed448Key)
 
 	// TODO: don't ignore this error
-	ar.sigma, _ = gotrax.GenerateSignature(c, longTerm.Priv, longTerm.Pub, c.im.clientProfile.PublicKey, longTerm.Pub, yk, t, gotrax.Kdf, usageAuth)
+	ar.sigma, _ = gotrx.GenerateSignature(c, longTerm.Priv, longTerm.Pub, c.im.clientProfile.PublicKey, longTerm.Pub, yk, t, gotrx.Kdf, usageAuth)
 
 	c.ar = ar
 	c.arp = &authRMessagePrivate{x: xkp, a: akp}
@@ -128,18 +128,18 @@ func (c *conversation) createAuthIMessage() ValidMessage {
 	phi := []byte{}
 
 	t := []byte{0x01}
-	t = append(t, gotrax.Kdf(usageAuthIBobClientProfile, 64, cp.Serialize())...)
-	t = append(t, gotrax.Kdf(usageAuthIAliceClientProfile, 64, c.ar.clientProfile.Serialize())...)
-	t = append(t, gotrax.SerializePoint(c.im.y)...)
-	t = append(t, gotrax.SerializePoint(c.ar.x)...)
+	t = append(t, gotrx.Kdf(usageAuthIBobClientProfile, 64, cp.Serialize())...)
+	t = append(t, gotrx.Kdf(usageAuthIAliceClientProfile, 64, c.ar.clientProfile.Serialize())...)
+	t = append(t, gotrx.SerializePoint(c.im.y)...)
+	t = append(t, gotrx.SerializePoint(c.ar.x)...)
 	t = append(t, c.im.b.serialize()...)
 	t = append(t, c.ar.a.serialize()...)
-	t = append(t, gotrax.Kdf(usageAuthIPhi, 64, phi)...)
+	t = append(t, gotrx.Kdf(usageAuthIPhi, 64, phi)...)
 
 	longTerm := c.getKeypair()
 
 	// TODO: don't ignore this error
-	ai.sigma, _ = gotrax.GenerateSignature(c, longTerm.Priv, longTerm.Pub, longTerm.Pub, c.ar.clientProfile.PublicKey, gotrax.CreatePublicKey(c.ar.x, gotrax.Ed448Key), t, gotrax.Kdf, usageAuth)
+	ai.sigma, _ = gotrx.GenerateSignature(c, longTerm.Priv, longTerm.Pub, longTerm.Pub, c.ar.clientProfile.PublicKey, gotrx.CreatePublicKey(c.ar.x, gotrx.Ed448Key), t, gotrx.Kdf, usageAuth)
 
 	c.ai = ai
 	return ValidMessage(ai.serialize())

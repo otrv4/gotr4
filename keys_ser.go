@@ -1,7 +1,7 @@
-package gotra
+package gotr4
 
-import "github.com/coyim/gotrax"
+import "github.com/otrv4/gotrx"
 
 func (k *dhPublicKey) serialize() []byte {
-	return gotrax.AppendMPI([]byte{}, k.k)
+	return gotrx.AppendMPI([]byte{}, k.k)
 }

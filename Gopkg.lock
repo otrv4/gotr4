@@ -2,49 +2,66 @@
 
 
 [[projects]]
-  branch = "master"
-  name = "github.com/coyim/gotrax"
-  packages = ["."]
-  revision = "5a5a65933f9c5fc21c1049c8d0d2b9e0dacf346f"
-
-[[projects]]
+  digest = "1:ca955a9cd5b50b0f43d2cc3aeb35c951473eeca41b34eb67507f1dbcc0542394"
   name = "github.com/kr/pretty"
   packages = ["."]
+  pruneopts = "UT"
   revision = "73f6ac0b30a98e433b289500d779f50c1a6f0712"
   version = "v0.1.0"
 
 [[projects]]
+  digest = "1:15b5cc79aad436d47019f814fde81a10221c740dc8ddf769221a65097fb6c2e9"
   name = "github.com/kr/text"
   packages = ["."]
+  pruneopts = "UT"
   revision = "e2ffdb16a802fe2bb95e2e35ff34f0e53aeef34f"
   version = "v0.1.0"
 
 [[projects]]
   branch = "master"
+  digest = "1:cb86cf4e3fce755678df2808dfd6574cdc83d02ceb08c46532e3832e36113f14"
   name = "github.com/otrv4/ed448"
   packages = ["."]
+  pruneopts = "UT"
   revision = "35f66737d61df04bcec71c8d35c1a1a0dcf2d111"
 
 [[projects]]
   branch = "master"
+  digest = "1:d57bef27007b7ca2dc0e58e6a1ab79af1484d3c5ed4f7949a0b0e82a986b833c"
+  name = "github.com/otrv4/gotrx"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "2c998f65e324df7eb0f1c225df654794e2ba598c"
+
+[[projects]]
+  branch = "master"
+  digest = "1:60db1fb8178b4f35afb76b513d912aaa4a71ba5948ceab8478e1737ba5385c89"
   name = "golang.org/x/crypto"
   packages = [
     "internal/subtle",
     "salsa20",
     "salsa20/salsa",
-    "sha3"
+    "sha3",
   ]
+  pruneopts = "UT"
   revision = "aabede6cba87e37f413b3e60ebfc214f8eeca1b0"
 
 [[projects]]
   branch = "v1"
+  digest = "1:af715ae33cc1f5695c4b2a4e4b21d008add8802a99e15bb467ac7c32edb5000d"
   name = "gopkg.in/check.v1"
   packages = ["."]
+  pruneopts = "UT"
   revision = "788fd78401277ebd861206a03c884797c6ec5541"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "4e242b833338b94222cf033d7ae1dbc74dd757967e6ddc3c11fdcea4ebe9d52e"
+  input-imports = [
+    "github.com/otrv4/ed448",
+    "github.com/otrv4/gotrx",
+    "golang.org/x/crypto/salsa20",
+    "gopkg.in/check.v1",
+  ]
   solver-name = "gps-cdcl"
   solver-version = 1

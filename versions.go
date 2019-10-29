@@ -1,4 +1,4 @@
-package gotra
+package gotr4
 
 func (c *conversation) getVersions() []byte {
 	// TODO: implement correctly

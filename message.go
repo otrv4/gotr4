@@ -1,4 +1,4 @@
-package gotra
+package gotr4
 
 type MessagePlaintext []byte
 

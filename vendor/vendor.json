@@ -1,0 +1,13 @@
+{
+	"comment": "",
+	"ignore": "",
+	"package": [
+		{
+			"checksumSHA1": "+/c40uv64jCnI7yaL1oyeFlfZmY=",
+			"path": "github.com/otrv4/gotrx",
+			"revision": "2c998f65e324df7eb0f1c225df654794e2ba598c",
+			"revisionTime": "2019-10-29T15:23:39Z"
+		}
+	],
+	"rootPath": "github.com/otrv4/gotr4"
+}

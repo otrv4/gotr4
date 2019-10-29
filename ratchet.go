@@ -1,10 +1,10 @@
-package gotra
+package gotr4
 
 import (
 	"math/big"
 
-	"github.com/coyim/gotrax"
 	"github.com/otrv4/ed448"
+	"github.com/otrv4/gotrx"
 )
 
 // This method can only be called by Bob - the person receiving the Auth-R message
@@ -20,11 +20,11 @@ func (c *conversation) initializeRatchetR() error {
 	k_dh := modExp(c.their_dh, c.our_dh.priv.k)
 	// TODO: Securely deletes our_dh.priv.
 
-	c.brace_key = gotrax.Kdf(usageThirdBraceKey, 32, gotrax.AppendMPI([]byte{}, k_dh))
+	c.brace_key = gotrx.Kdf(usageThirdBraceKey, 32, gotrx.AppendMPI([]byte{}, k_dh))
 	// TODO: Securely deletes k_dh
-	k := gotrax.Kdf(usageSharedSecret, 64, append(gotrax.SerializePoint(k_ecdh), c.brace_key...))
+	k := gotrx.Kdf(usageSharedSecret, 64, append(gotrx.SerializePoint(k_ecdh), c.brace_key...))
 	// TODO: securely delete k_ecdh and c.brace_key
-	c.ssid = gotrax.Kdf(usageSSID, 8, k)
+	c.ssid = gotrx.Kdf(usageSSID, 8, k)
 
 	c.ratchetId = 0
 	c.ratchetJ = 0
@@ -33,11 +33,11 @@ func (c *conversation) initializeRatchetR() error {
 	c.rootKey = k
 
 	var r1 [57]byte
-	gotrax.Kdfx(usageECDHFirstEphemeral, r1[:], k)
-	c.our_ecdh = gotrax.DeriveKeypair(r1)
+	gotrx.Kdfx(usageECDHFirstEphemeral, r1[:], k)
+	c.our_ecdh = gotrx.DeriveKeypair(r1)
 	// TODO: securely delete r1 and old our_ecdh
 
-	r2 := gotrax.Kdf(usageDHFirstEphemeral, 80, k)
+	r2 := gotrx.Kdf(usageDHFirstEphemeral, 80, k)
 	r2x := new(big.Int).SetBytes(r2)
 	c.our_dh = &dhKeypair{
 		priv: &dhPrivateKey{k: r2x},
@@ -68,11 +68,11 @@ func (c *conversation) initializeRatchetI() error {
 	k_dh := modExp(c.their_dh, c.our_dh.priv.k)
 	// TODO: Securely deletes our_dh.priv.
 
-	c.brace_key = gotrax.Kdf(usageThirdBraceKey, 32, gotrax.AppendMPI([]byte{}, k_dh))
+	c.brace_key = gotrx.Kdf(usageThirdBraceKey, 32, gotrx.AppendMPI([]byte{}, k_dh))
 	// TODO: Securely deletes k_dh
-	k := gotrax.Kdf(usageSharedSecret, 64, append(gotrax.SerializePoint(k_ecdh), c.brace_key...))
+	k := gotrx.Kdf(usageSharedSecret, 64, append(gotrx.SerializePoint(k_ecdh), c.brace_key...))
 	// TODO: securely delete k_ecdh and c.brace_key
-	c.ssid = gotrax.Kdf(usageSSID, 8, k)
+	c.ssid = gotrx.Kdf(usageSSID, 8, k)
 	// First part ends
 
 	// Second part starts
@@ -83,12 +83,12 @@ func (c *conversation) initializeRatchetI() error {
 	c.rootKey = k
 
 	var r1 [57]byte
-	gotrax.Kdfx(usageECDHFirstEphemeral, r1[:], k)
-	their_ecdh2 := gotrax.DeriveKeypair(r1)
+	gotrx.Kdfx(usageECDHFirstEphemeral, r1[:], k)
+	their_ecdh2 := gotrx.DeriveKeypair(r1)
 	c.their_ecdh = their_ecdh2.Pub.K()
 	// TODO: securely delete r1 and secret in their_ecdh2
 
-	r2 := gotrax.Kdf(usageDHFirstEphemeral, 80, k)
+	r2 := gotrx.Kdf(usageDHFirstEphemeral, 80, k)
 	r2x := new(big.Int).SetBytes(r2)
 
 	c.their_dh = modExp(g3, r2x)
@@ -108,21 +108,21 @@ func (c *conversation) maybeRatchetSender() {
 	c.ratchetJ = 0
 
 	// TODO: we should delete the old our_ecdh safely
-	c.our_ecdh = gotrax.GenerateKeypair(c)
+	c.our_ecdh = gotrx.GenerateKeypair(c)
 	k_ecdh := ed448.PointScalarMul(c.their_ecdh, c.our_ecdh.Priv.K())
 
 	if c.ratchetId%3 == 0 {
 		// TODO: we shouldn't ignore this error
 		c.our_dh, _ = generateDHKeypair(c)
 		k_dh := modExp(c.their_dh, c.our_dh.priv.k)
-		c.brace_key = gotrax.Kdf(usageThirdBraceKey, 32, gotrax.AppendMPI([]byte{}, k_dh))
+		c.brace_key = gotrx.Kdf(usageThirdBraceKey, 32, gotrx.AppendMPI([]byte{}, k_dh))
 		// TODO: here we can safely delete k_dh
 	} else {
 		// TODO: safely delete the old brace key here
-		c.brace_key = gotrax.Kdf(usageBraceKey, 32, c.brace_key)
+		c.brace_key = gotrx.Kdf(usageBraceKey, 32, c.brace_key)
 	}
 
-	k := gotrax.Kdf(usageSharedSecret, 64, append(gotrax.SerializePoint(k_ecdh), c.brace_key...))
+	k := gotrx.Kdf(usageSharedSecret, 64, append(gotrx.SerializePoint(k_ecdh), c.brace_key...))
 	// TODO: securely delete k_ecdh
 
 	c.rootKey, c.sendingChainKey = c.deriveRatchetKeys(c.rootKey, k)
@@ -141,18 +141,18 @@ func (c *conversation) ratchetReceiver() {
 		// TODO: we shouldn't ignore this error
 		//		c.our_dh, _ = generateDHKeypair(c)
 		k_dh := modExp(c.their_dh, c.our_dh.priv.k)
-		c.brace_key = gotrax.Kdf(usageThirdBraceKey, 32, gotrax.AppendMPI([]byte{}, k_dh))
+		c.brace_key = gotrx.Kdf(usageThirdBraceKey, 32, gotrx.AppendMPI([]byte{}, k_dh))
 		// TODO: here we can safely delete k_dh
 	} else {
 		// TODO: safely delete the old brace key here
-		c.brace_key = gotrax.Kdf(usageBraceKey, 32, c.brace_key)
+		c.brace_key = gotrx.Kdf(usageBraceKey, 32, c.brace_key)
 	}
 
 	c.ratchetPN = c.ratchetJ
 	c.ratchetJ = 0
 	c.ratchetK = 0
 
-	k := gotrax.Kdf(usageSharedSecret, 64, append(gotrax.SerializePoint(k_ecdh), c.brace_key...))
+	k := gotrx.Kdf(usageSharedSecret, 64, append(gotrx.SerializePoint(k_ecdh), c.brace_key...))
 	// TODO: securely delete k_ecdh
 
 	c.rootKey, c.receivingChainKey = c.deriveRatchetKeys(c.rootKey, k)
@@ -164,13 +164,13 @@ func (c *conversation) ratchetReceiver() {
 
 func (c *conversation) deriveRatchetKeys(previousRootKey []byte, k []byte) ([]byte, []byte) {
 	dt := append(previousRootKey, k...)
-	rk := gotrax.Kdf(usageRootKey, 64, dt)
-	ck := gotrax.Kdf(usageChainKey, 64, dt)
+	rk := gotrx.Kdf(usageRootKey, 64, dt)
+	ck := gotrx.Kdf(usageChainKey, 64, dt)
 	return rk, ck
 }
 
 func (c *conversation) deriveCurrentMK(ck []byte) ([]byte, []byte) {
-	mkenc := gotrax.Kdf(usageMessageKey, 32, ck)
-	mkmac := gotrax.Kdf(usageMACKey, 64, mkenc)
+	mkenc := gotrx.Kdf(usageMessageKey, 32, ck)
+	mkmac := gotrx.Kdf(usageMACKey, 64, mkenc)
 	return mkenc, mkmac
 }

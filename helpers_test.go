@@ -1,4 +1,4 @@
-package gotra
+package gotr4
 
 import (
 	"testing"

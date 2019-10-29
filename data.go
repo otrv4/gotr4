@@ -1,10 +1,10 @@
-package gotra
+package gotr4
 
 import (
 	"bytes"
 
-	"github.com/coyim/gotrax"
 	"github.com/otrv4/ed448"
+	"github.com/otrv4/gotrx"
 	"golang.org/x/crypto/salsa20"
 )
 
@@ -52,11 +52,11 @@ func (c *conversation) createDataMessage(m []byte, tt []*tlv) ValidMessage {
 	dm.ratchetId = c.ratchetId - 1
 
 	mke, mkm := c.deriveCurrentMK(c.sendingChainKey)
-	c.sendingChainKey = gotrax.Kdf(usageNextChainKey, 64, c.sendingChainKey)
+	c.sendingChainKey = gotrx.Kdf(usageNextChainKey, 64, c.sendingChainKey)
 	// TODO: Securely delete the old sending chain key
 
 	// TODO: don't ignore error here
-	gotrax.RandomInto(c, dm.nonce[:])
+	gotrx.RandomInto(c, dm.nonce[:])
 
 	mm := m
 	if len(tt) > 0 {
@@ -68,7 +68,7 @@ func (c *conversation) createDataMessage(m []byte, tt []*tlv) ValidMessage {
 	copy(key[:], mke)
 	salsa20.XORKeyStream(dm.msg, mm, dm.nonce[:], &key)
 
-	copy(dm.mac[:], gotrax.Kdf(usageAuthenticator, 64, append(mkm, gotrax.Kdf(usageDataMessageSections, 64, dm.serializeForMac())...)))
+	copy(dm.mac[:], gotrx.Kdf(usageAuthenticator, 64, append(mkm, gotrx.Kdf(usageDataMessageSections, 64, dm.serializeForMac())...)))
 
 	// TODO: securely delete mke and mkm - oh wait, shouldn't we keep mkm for revealing?
 
@@ -94,14 +94,14 @@ func (c *conversation) receivedDataMessage(dm *dataMessage) (plain MessagePlaint
 	// TODO: store missing messages here
 
 	mke, mkm := c.deriveCurrentMK(c.receivingChainKey)
-	auth := gotrax.Kdf(usageAuthenticator, 64, append(mkm, gotrax.Kdf(usageDataMessageSections, 64, dm.serializeForMac())...))
+	auth := gotrx.Kdf(usageAuthenticator, 64, append(mkm, gotrx.Kdf(usageDataMessageSections, 64, dm.serializeForMac())...))
 	if !bytes.Equal(auth, dm.mac[:]) {
 		// TODO: handle this better
 		// TODO: delete mke and mkm safely
 		return nil, nil, nil
 	}
 
-	c.receivingChainKey = gotrax.Kdf(usageNextChainKey, 64, c.receivingChainKey)
+	c.receivingChainKey = gotrx.Kdf(usageNextChainKey, 64, c.receivingChainKey)
 	// TODO: securely delete the old chain key
 	c.ratchetK++
 

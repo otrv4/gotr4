@@ -1,9 +1,9 @@
-package gotra
+package gotr4
 
 import (
 	"math/big"
 
-	"github.com/coyim/gotrax"
+	"github.com/otrv4/gotrx"
 )
 
 type dhKeypair struct {
@@ -49,19 +49,19 @@ func modExp(g, x *big.Int) *big.Int {
 	return new(big.Int).Exp(g, x, p)
 }
 
-func randMPI(r gotrax.WithRandom, b []byte) (*big.Int, error) {
-	if err := gotrax.RandomInto(r, b); err != nil {
+func randMPI(r gotrx.WithRandom, b []byte) (*big.Int, error) {
+	if err := gotrx.RandomInto(r, b); err != nil {
 		return nil, err
 	}
 
 	return new(big.Int).SetBytes(b), nil
 }
 
-func randSizedMPI(r gotrax.WithRandom, size int) (*big.Int, error) {
+func randSizedMPI(r gotrx.WithRandom, size int) (*big.Int, error) {
 	return randMPI(r, make([]byte, size))
 }
 
-func generateDHKeypair(r gotrax.WithRandom) (*dhKeypair, error) {
+func generateDHKeypair(r gotrx.WithRandom) (*dhKeypair, error) {
 	k, e := randSizedMPI(r, 80)
 	if e != nil {
 		return nil, e

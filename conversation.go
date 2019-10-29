@@ -1,20 +1,20 @@
-package gotra
+package gotr4
 
 import (
 	"bytes"
 	"io"
 	"math/big"
 
-	"github.com/coyim/gotrax"
 	"github.com/otrv4/ed448"
+	"github.com/otrv4/gotrx"
 )
 
 type conversation struct {
 	r                io.Reader
-	longTerm         *gotrax.Keypair
+	longTerm         *gotrx.Keypair
 	otherInstanceTag uint32
 
-	currentClientProfile *gotrax.ClientProfile
+	currentClientProfile *gotrx.ClientProfile
 
 	im  *identityMessage
 	imp *identityMessagePrivate
@@ -38,7 +38,7 @@ type conversation struct {
 	their_ecdh ed448.Point
 	their_dh   *big.Int
 
-	our_ecdh *gotrax.Keypair
+	our_ecdh *gotrx.Keypair
 	our_dh   *dhKeypair
 
 	brace_key []byte
@@ -86,22 +86,22 @@ func isQueryMessage(m ValidMessage) bool {
 
 func isIdentityMessage(m ValidMessage) bool {
 	// TODO: make this work correctly
-	return bytes.HasPrefix(m, append(gotrax.AppendShort(nil, version), messageTypeIdentityMessage))
+	return bytes.HasPrefix(m, append(gotrx.AppendShort(nil, version), messageTypeIdentityMessage))
 }
 
 func isAuthRMessage(m ValidMessage) bool {
 	// TODO: make this work correctly
-	return bytes.HasPrefix(m, append(gotrax.AppendShort(nil, version), messageTypeAuthRMessage))
+	return bytes.HasPrefix(m, append(gotrx.AppendShort(nil, version), messageTypeAuthRMessage))
 }
 
 func isAuthIMessage(m ValidMessage) bool {
 	// TODO: make this work correctly
-	return bytes.HasPrefix(m, append(gotrax.AppendShort(nil, version), messageTypeAuthIMessage))
+	return bytes.HasPrefix(m, append(gotrx.AppendShort(nil, version), messageTypeAuthIMessage))
 }
 
 func isDataMessage(m ValidMessage) bool {
 	// TODO: make this work correctly
-	return bytes.HasPrefix(m, append(gotrax.AppendShort(nil, version), messageTypeDataMessage))
+	return bytes.HasPrefix(m, append(gotrx.AppendShort(nil, version), messageTypeDataMessage))
 }
 
 func (c *conversation) processQueryMessage(m ValidMessage) (plain MessagePlaintext, toSend []ValidMessage, err error) {

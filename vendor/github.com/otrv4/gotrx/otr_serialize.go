@@ -1,13 +1,14 @@
-package gotrax
+package gotrx
 
 import (
 	"crypto/dsa"
 	"time"
 )
 
+// SerializeForSignature generates the parts of the client profile that is used for the signature
 func (cp *ClientProfile) SerializeForSignature() []byte {
 	out := []byte{}
-	fields := uint32(4)
+	fields := uint32(5)
 
 	if cp.DsaKey != nil {
 		fields++
@@ -24,6 +25,9 @@ func (cp *ClientProfile) SerializeForSignature() []byte {
 
 	out = AppendShort(out, ClientProfileTagPublicKey)
 	out = append(out, cp.PublicKey.Serialize()...)
+
+	out = AppendShort(out, ClientProfileTagForgingKey)
+	out = append(out, cp.ForgingKey.Serialize()...)
 
 	out = AppendShort(out, ClientProfileTagVersions)
 	out = append(out, SerializeVersions(cp.Versions)...)
@@ -44,19 +48,23 @@ func (cp *ClientProfile) SerializeForSignature() []byte {
 	return out
 }
 
+// Serialize returns the complete serialization of the client profile
 func (cp *ClientProfile) Serialize() []byte {
 	return append(cp.SerializeForSignature(), cp.Sig.Serialize()...)
 }
 
+// SerializeVersions returns the serialization of a versions string
 func SerializeVersions(v []byte) []byte {
 	return AppendData(nil, v)
 }
 
+// SerializeExpiry returns the serialization of the time given as a big-endian unsigned 64-bit number
 func SerializeExpiry(t time.Time) []byte {
 	val := t.Unix()
 	return AppendLong(nil, uint64(val))
 }
 
+// SerializeDSAKey will serialize the four component types of the DSA key, prefixed with the key type
 func SerializeDSAKey(k *dsa.PublicKey) []byte {
 	result := DsaKeyType
 	result = AppendMPI(result, k.P)
@@ -66,6 +74,7 @@ func SerializeDSAKey(k *dsa.PublicKey) []byte {
 	return result
 }
 
+// DeserializeDSAKey tries to deserialize the data or returns failure
 func DeserializeDSAKey(buf []byte) ([]byte, *dsa.PublicKey, bool) {
 	res := &dsa.PublicKey{}
 	var ok bool
@@ -93,6 +102,7 @@ func DeserializeDSAKey(buf []byte) ([]byte, *dsa.PublicKey, bool) {
 	return buf, res, true
 }
 
+// DeserializeField tries to deserialize one client profile field or returns failure
 func (cp *ClientProfile) DeserializeField(buf []byte) ([]byte, bool) {
 	var tp uint16
 	var ok bool
@@ -109,6 +119,11 @@ func (cp *ClientProfile) DeserializeField(buf []byte) ([]byte, bool) {
 	case ClientProfileTagPublicKey:
 		cp.PublicKey = &PublicKey{keyType: Ed448Key}
 		if buf, ok = cp.PublicKey.Deserialize(buf); !ok {
+			return nil, false
+		}
+	case ClientProfileTagForgingKey:
+		cp.ForgingKey = &PublicKey{keyType: ForgingKey}
+		if buf, ok = cp.ForgingKey.Deserialize(buf); !ok {
 			return nil, false
 		}
 	case ClientProfileTagVersions:
@@ -133,6 +148,7 @@ func (cp *ClientProfile) DeserializeField(buf []byte) ([]byte, bool) {
 	return buf, true
 }
 
+// Deserialize will try to deserialize as a client profile or return failure
 func (cp *ClientProfile) Deserialize(buf []byte) ([]byte, bool) {
 	var fields uint32
 	var ok bool
@@ -148,6 +164,89 @@ func (cp *ClientProfile) Deserialize(buf []byte) ([]byte, bool) {
 
 	cp.Sig = &EddsaSignature{}
 	if buf, ok = cp.Sig.Deserialize(buf); !ok {
+		return nil, false
+	}
+
+	return buf, true
+}
+
+// SerializeForSignature serializes the parts of the prekey profile to be signed
+func (pp *PrekeyProfile) SerializeForSignature() []byte {
+	var out []byte
+	out = AppendWord(out, pp.InstanceTag)
+	out = append(out, SerializeExpiry(pp.Expiration)...)
+	out = append(out, pp.SharedPrekey.Serialize()...)
+	return out
+}
+
+// Serialize willl return the serialized form of the prekey profile
+func (pp *PrekeyProfile) Serialize() []byte {
+	return append(pp.SerializeForSignature(), pp.Sig.Serialize()...)
+}
+
+// Deserialize will try to deserialize as a prekey profile or return failure
+func (pp *PrekeyProfile) Deserialize(buf []byte) ([]byte, bool) {
+	var ok bool
+
+	if buf, pp.InstanceTag, ok = ExtractWord(buf); !ok {
+		return nil, false
+	}
+
+	if buf, pp.Expiration, ok = ExtractTime(buf); !ok {
+		return nil, false
+	}
+
+	pp.SharedPrekey = CreatePublicKey(nil, SharedPrekeyKey)
+	if buf, ok = pp.SharedPrekey.Deserialize(buf); !ok {
+		return nil, false
+	}
+
+	pp.Sig = &EddsaSignature{}
+	if buf, ok = pp.Sig.Deserialize(buf); !ok {
+		return nil, false
+	}
+
+	return buf, true
+}
+
+// Serialize will return the serialized form of the prekey message
+func (pm *PrekeyMessage) Serialize() []byte {
+	out := AppendShort(nil, version)
+	out = append(out, messageTypePrekeyMessage)
+	out = AppendWord(out, pm.Identifier)
+	out = AppendWord(out, pm.InstanceTag)
+	out = append(out, SerializePoint(pm.Y)...)
+	out = AppendMPI(out, pm.B)
+	return out
+}
+
+// Deserialize will try to deserialize as a prekey message or return failure
+func (pm *PrekeyMessage) Deserialize(buf []byte) ([]byte, bool) {
+	var ok1 bool
+	var v uint16
+
+	if buf, v, ok1 = ExtractShort(buf); !ok1 || v != version { // version
+		return nil, false
+	}
+
+	if len(buf) < 1 || buf[0] != messageTypePrekeyMessage {
+		return nil, false
+	}
+	buf = buf[1:] // message type
+
+	if buf, pm.Identifier, ok1 = ExtractWord(buf); !ok1 {
+		return nil, false
+	}
+
+	if buf, pm.InstanceTag, ok1 = ExtractWord(buf); !ok1 {
+		return nil, false
+	}
+
+	if buf, pm.Y, ok1 = DeserializePoint(buf); !ok1 {
+		return nil, false
+	}
+
+	if buf, pm.B, ok1 = ExtractMPI(buf); !ok1 {
 		return nil, false
 	}
 

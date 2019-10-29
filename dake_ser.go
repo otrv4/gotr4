@@ -1,23 +1,23 @@
-package gotra
+package gotr4
 
 import (
-	"github.com/coyim/gotrax"
+	"github.com/otrv4/gotrx"
 )
 
 func (m *identityMessage) serialize() []byte {
-	out := gotrax.AppendShort(nil, version)
+	out := gotrx.AppendShort(nil, version)
 	out = append(out, messageTypeIdentityMessage)
-	out = gotrax.AppendWord(out, m.senderInstanceTag)
-	out = gotrax.AppendWord(out, m.receiverInstanceTag)
+	out = gotrx.AppendWord(out, m.senderInstanceTag)
+	out = gotrx.AppendWord(out, m.receiverInstanceTag)
 	out = append(out, m.clientProfile.Serialize()...)
-	out = append(out, gotrax.SerializePoint(m.y)...)
+	out = append(out, gotrx.SerializePoint(m.y)...)
 	out = append(out, m.b.serialize()...)
 	return out
 }
 
 func (m *identityMessage) deserialize(buf []byte) ([]byte, bool) {
 	var ok bool
-	buf, v, ok := gotrax.ExtractShort(buf)
+	buf, v, ok := gotrx.ExtractShort(buf)
 	if !ok || v != version {
 		return buf, false
 	}
@@ -27,29 +27,29 @@ func (m *identityMessage) deserialize(buf []byte) ([]byte, bool) {
 	}
 	buf = buf[1:]
 
-	buf, m.senderInstanceTag, ok = gotrax.ExtractWord(buf)
+	buf, m.senderInstanceTag, ok = gotrx.ExtractWord(buf)
 	if !ok {
 		return buf, false
 	}
 
-	buf, m.receiverInstanceTag, ok = gotrax.ExtractWord(buf)
+	buf, m.receiverInstanceTag, ok = gotrx.ExtractWord(buf)
 	if !ok {
 		return buf, false
 	}
 
-	m.clientProfile = &gotrax.ClientProfile{}
+	m.clientProfile = &gotrx.ClientProfile{}
 	buf, ok = m.clientProfile.Deserialize(buf)
 	if !ok {
 		return buf, false
 	}
 
-	buf, m.y, ok = gotrax.DeserializePoint(buf)
+	buf, m.y, ok = gotrx.DeserializePoint(buf)
 	if !ok {
 		return buf, false
 	}
 
 	m.b = &dhPublicKey{}
-	buf, m.b.k, ok = gotrax.ExtractMPI(buf)
+	buf, m.b.k, ok = gotrx.ExtractMPI(buf)
 	if !ok {
 		return buf, false
 	}
@@ -58,12 +58,12 @@ func (m *identityMessage) deserialize(buf []byte) ([]byte, bool) {
 }
 
 func (m *authRMessage) serialize() []byte {
-	out := gotrax.AppendShort(nil, version)
+	out := gotrx.AppendShort(nil, version)
 	out = append(out, messageTypeAuthRMessage)
-	out = gotrax.AppendWord(out, m.senderInstanceTag)
-	out = gotrax.AppendWord(out, m.receiverInstanceTag)
+	out = gotrx.AppendWord(out, m.senderInstanceTag)
+	out = gotrx.AppendWord(out, m.receiverInstanceTag)
 	out = append(out, m.clientProfile.Serialize()...)
-	out = append(out, gotrax.SerializePoint(m.x)...)
+	out = append(out, gotrx.SerializePoint(m.x)...)
 	out = append(out, m.a.serialize()...)
 	out = append(out, m.sigma.Serialize()...)
 	return out
@@ -71,7 +71,7 @@ func (m *authRMessage) serialize() []byte {
 
 func (m *authRMessage) deserialize(buf []byte) ([]byte, bool) {
 	var ok bool
-	buf, v, ok := gotrax.ExtractShort(buf)
+	buf, v, ok := gotrx.ExtractShort(buf)
 	if !ok || v != version {
 		return buf, false
 	}
@@ -81,34 +81,34 @@ func (m *authRMessage) deserialize(buf []byte) ([]byte, bool) {
 	}
 	buf = buf[1:]
 
-	buf, m.senderInstanceTag, ok = gotrax.ExtractWord(buf)
+	buf, m.senderInstanceTag, ok = gotrx.ExtractWord(buf)
 	if !ok {
 		return buf, false
 	}
 
-	buf, m.receiverInstanceTag, ok = gotrax.ExtractWord(buf)
+	buf, m.receiverInstanceTag, ok = gotrx.ExtractWord(buf)
 	if !ok {
 		return buf, false
 	}
 
-	m.clientProfile = &gotrax.ClientProfile{}
+	m.clientProfile = &gotrx.ClientProfile{}
 	buf, ok = m.clientProfile.Deserialize(buf)
 	if !ok {
 		return buf, false
 	}
 
-	buf, m.x, ok = gotrax.DeserializePoint(buf)
+	buf, m.x, ok = gotrx.DeserializePoint(buf)
 	if !ok {
 		return buf, false
 	}
 
 	m.a = &dhPublicKey{}
-	buf, m.a.k, ok = gotrax.ExtractMPI(buf)
+	buf, m.a.k, ok = gotrx.ExtractMPI(buf)
 	if !ok {
 		return buf, false
 	}
 
-	m.sigma = &gotrax.RingSignature{}
+	m.sigma = &gotrx.RingSignature{}
 	if buf, ok = m.sigma.Deserialize(buf); !ok {
 		return nil, false
 	}
@@ -117,17 +117,17 @@ func (m *authRMessage) deserialize(buf []byte) ([]byte, bool) {
 }
 
 func (m *authIMessage) serialize() []byte {
-	out := gotrax.AppendShort(nil, version)
+	out := gotrx.AppendShort(nil, version)
 	out = append(out, messageTypeAuthIMessage)
-	out = gotrax.AppendWord(out, m.senderInstanceTag)
-	out = gotrax.AppendWord(out, m.receiverInstanceTag)
+	out = gotrx.AppendWord(out, m.senderInstanceTag)
+	out = gotrx.AppendWord(out, m.receiverInstanceTag)
 	out = append(out, m.sigma.Serialize()...)
 	return out
 }
 
 func (m *authIMessage) deserialize(buf []byte) ([]byte, bool) {
 	var ok bool
-	buf, v, ok := gotrax.ExtractShort(buf)
+	buf, v, ok := gotrx.ExtractShort(buf)
 	if !ok || v != version {
 		return buf, false
 	}
@@ -137,17 +137,17 @@ func (m *authIMessage) deserialize(buf []byte) ([]byte, bool) {
 	}
 	buf = buf[1:]
 
-	buf, m.senderInstanceTag, ok = gotrax.ExtractWord(buf)
+	buf, m.senderInstanceTag, ok = gotrx.ExtractWord(buf)
 	if !ok {
 		return buf, false
 	}
 
-	buf, m.receiverInstanceTag, ok = gotrax.ExtractWord(buf)
+	buf, m.receiverInstanceTag, ok = gotrx.ExtractWord(buf)
 	if !ok {
 		return buf, false
 	}
 
-	m.sigma = &gotrax.RingSignature{}
+	m.sigma = &gotrx.RingSignature{}
 	if buf, ok = m.sigma.Deserialize(buf); !ok {
 		return nil, false
 	}

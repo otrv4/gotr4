@@ -1,26 +1,26 @@
-package gotra
+package gotr4
 
 import (
 	"time"
 
-	"github.com/coyim/gotrax"
+	"github.com/otrv4/gotrx"
 	. "gopkg.in/check.v1"
 )
 
 func (s *GotraSuite) Test_basicFlow_onlineWithQueryMessage(c *C) {
 	// TODO: we'll have to add assertions of everything here later
 
-	rand := gotrax.FixtureRand()
+	rand := gotrx.FixtureRand()
 
 	alice := &conversation{r: rand, state: stateStart{}}
 	bob := &conversation{r: rand, state: stateStart{}}
 	cp1 := alice.getValidClientProfile()
 	cp1.Expiration = time.Date(2028, 11, 5, 13, 46, 00, 13, time.UTC)
-	cp1.Sig = gotrax.CreateEddsaSignature(cp1.GenerateSignature(alice.getKeypair()))
+	cp1.Sig = gotrx.CreateEddsaSignature(cp1.GenerateSignature(alice.getKeypair()))
 
 	cp2 := bob.getValidClientProfile()
 	cp2.Expiration = time.Date(2028, 12, 5, 13, 46, 00, 13, time.UTC)
-	cp2.Sig = gotrax.CreateEddsaSignature(cp1.GenerateSignature(bob.getKeypair()))
+	cp2.Sig = gotrx.CreateEddsaSignature(cp1.GenerateSignature(bob.getKeypair()))
 
 	c.Assert(alice.state, FitsTypeOf, stateStart{})
 	c.Assert(bob.state, FitsTypeOf, stateStart{})
