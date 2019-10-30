@@ -26,7 +26,7 @@ type conversation struct {
 
 	ssid []byte
 
-	ratchetId uint32
+	ratchetID uint32
 	ratchetJ  uint32
 	ratchetK  uint32
 	ratchetPN uint32
@@ -35,13 +35,13 @@ type conversation struct {
 	sendingChainKey   []byte
 	receivingChainKey []byte
 
-	their_ecdh ed448.Point
-	their_dh   *big.Int
+	theirEcdh ed448.Point
+	theirDh   *big.Int
 
-	our_ecdh *gotrx.Keypair
-	our_dh   *dhKeypair
+	ourEcdh *gotrx.Keypair
+	ourDh   *dhKeypair
 
-	brace_key []byte
+	braceKey []byte
 
 	shouldRatchet bool
 }

@@ -13,8 +13,8 @@ type dataMessage struct {
 	receiverInstanceTag uint32
 	flags               uint8
 	pn                  uint32
-	ratchetId           uint32
-	messageId           uint32
+	ratchetID           uint32
+	messageID           uint32
 	ecdh                ed448.Point
 	dh                  *dhPublicKey
 	nonce               [24]byte
@@ -45,11 +45,11 @@ func (c *conversation) createDataMessage(m []byte, tt []*tlv) ValidMessage {
 	// TODO: we should probably set pn somewhere
 	// TODO: we need to set ignore unreadable here
 	//	dm.flags =
-	dm.ecdh = c.our_ecdh.Pub.K()
-	dm.dh = c.our_dh.pub
+	dm.ecdh = c.ourEcdh.Pub.K()
+	dm.dh = c.ourDh.pub
 
-	dm.messageId = c.ratchetJ
-	dm.ratchetId = c.ratchetId - 1
+	dm.messageID = c.ratchetJ
+	dm.ratchetID = c.ratchetID - 1
 
 	mke, mkm := c.deriveCurrentMK(c.sendingChainKey)
 	c.sendingChainKey = gotrx.Kdf(usageNextChainKey, 64, c.sendingChainKey)
@@ -80,13 +80,13 @@ func (c *conversation) createDataMessage(m []byte, tt []*tlv) ValidMessage {
 func (c *conversation) receivedDataMessage(dm *dataMessage) (plain MessagePlaintext, toSend []ValidMessage, err error) {
 	// TODO: check for out of order messages
 
-	// TODO: what happens if we receive messageId = 1 for a new ratchet?
+	// TODO: what happens if we receive messageID = 1 for a new ratchet?
 	// This is probably a spec problem
-	if c.their_ecdh == nil || !dm.ecdh.Equals(c.their_ecdh) {
+	if c.theirEcdh == nil || !dm.ecdh.Equals(c.theirEcdh) {
 		// TODO: we need to rotate ratchet here
 		// TODO: store message keys for previous ratchet, based on dm.pn
-		c.their_ecdh = dm.ecdh
-		c.their_dh = dm.dh.k
+		c.theirEcdh = dm.ecdh
+		c.theirDh = dm.dh.k
 
 		c.ratchetReceiver()
 	}

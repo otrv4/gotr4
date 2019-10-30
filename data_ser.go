@@ -9,8 +9,8 @@ func (m *dataMessage) serializeForMac() []byte {
 	out = gotrx.AppendWord(out, m.receiverInstanceTag)
 	out = append(out, m.flags)
 	out = gotrx.AppendWord(out, m.pn)
-	out = gotrx.AppendWord(out, m.ratchetId)
-	out = gotrx.AppendWord(out, m.messageId)
+	out = gotrx.AppendWord(out, m.ratchetID)
+	out = gotrx.AppendWord(out, m.messageID)
 	out = append(out, gotrx.SerializePoint(m.ecdh)...)
 	out = append(out, m.dh.serialize()...)
 	out = append(out, m.nonce[:]...)
@@ -57,12 +57,12 @@ func (m *dataMessage) deserialize(buf []byte) ([]byte, bool) {
 		return buf, false
 	}
 
-	buf, m.ratchetId, ok = gotrx.ExtractWord(buf)
+	buf, m.ratchetID, ok = gotrx.ExtractWord(buf)
 	if !ok {
 		return buf, false
 	}
 
-	buf, m.messageId, ok = gotrx.ExtractWord(buf)
+	buf, m.messageID, ok = gotrx.ExtractWord(buf)
 	if !ok {
 		return buf, false
 	}
