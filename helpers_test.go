@@ -8,6 +8,6 @@ import (
 
 func Test(t *testing.T) { TestingT(t) }
 
-type GotraSuite struct{}
+type Gotr4Suite struct{}
 
-var _ = Suite(&GotraSuite{})
+var _ = Suite(&Gotr4Suite{})

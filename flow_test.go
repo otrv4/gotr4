@@ -7,7 +7,7 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-func (s *GotraSuite) Test_basicFlow_onlineWithQueryMessage(c *C) {
+func (s *Gotr4Suite) Test_basicFlow_onlineWithQueryMessage(c *C) {
 	// TODO: we'll have to add assertions of everything here later
 
 	rand := gotrx.FixtureRand()
